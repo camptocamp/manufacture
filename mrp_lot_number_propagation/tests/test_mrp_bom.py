@@ -21,13 +21,13 @@ class TestMrpBom(Common):
     def test_bom_line_check_propagate_lot_number_not_tracked(self):
         self.bom.lot_number_propagation = True
         # Flag a line that can't be propagated
-        with self.assertRaisesRegex(ValidationError, "is not tracked"):
+        with self.assertRaisesRegex(ValidationError, "Only components tracked"):
             self.line_no_tracking.propagate_lot_number = True
 
     def test_bom_line_check_propagate_lot_number_tracked_by_lot(self):
         self.bom.lot_number_propagation = True
         # Flag a line tracked by lot (not SN) which is not supported
-        with self.assertRaisesRegex(ValidationError, "is not tracked"):
+        with self.assertRaisesRegex(ValidationError, "Only components tracked"):
             self.line_tracked_by_lot.propagate_lot_number = True
 
     def test_bom_line_check_propagate_lot_number_same_tracking(self):

@@ -10,12 +10,15 @@
     <field name="arch" type="xml">
       <!-- Place new fields in the first group while being compatible with OE  -->
       <xpath expr="//field[@name='id']/.." position="inside">
-        <field name="is_lot_number_propagated" />
+        <field name="is_lot_number_propagated" force_save="1" />
+      </xpath>
+      <label for="lot_producing_id" position="before">
         <field
                     name="propagated_lot_producing"
-                    attrs="{'invisible': ['|', ('propagated_lot_producing', '=', False), ('lot_producing_id', '!=', False)]}"
+                    string="Lot/Serial Number"
+                    attrs="{'invisible': [('is_lot_number_propagated', '=', False)]}"
                 />
-      </xpath>
+      </label>
     </field>
   </record>
 

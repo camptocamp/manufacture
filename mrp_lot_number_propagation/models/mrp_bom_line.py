@@ -55,24 +55,8 @@ class MrpBomLine(models.Model):
                     )
                 if line.propagate_lot_number and line.product_id.tracking != "serial":
                     raise ValidationError(
-                        _("%s is not tracked serial number.")
-                        % (line.product_id.display_name)
-                    )
-                if (
-                    line.propagate_lot_number
-                    and line.product_id.tracking != line.bom_id.product_tmpl_id.tracking
-                    and (
-                        line.bom_id.product_tmpl_id.tracking == "serial"
-                        or line.product_id.tracking == "serial"
-                    )
-                ):
-                    raise ValidationError(
                         _(
-                            "%(component)s and %(finished_product)s should "
-                            "be tracked by serial number."
+                            "Only components tracked by serial number can propagate "
+                            "its lot/serial number to the finished product."
                         )
-                        % {
-                            "component": line.product_id.display_name,
-                            "finished_product": line.bom_id.product_tmpl_id.display_name,
-                        }
                     )

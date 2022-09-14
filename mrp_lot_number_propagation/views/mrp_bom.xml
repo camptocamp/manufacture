@@ -9,7 +9,7 @@
     <field name="inherit_id" ref="mrp.mrp_bom_form_view" />
     <field name="arch" type="xml">
       <field name="company_id" position="after">
-        <field name="display_lot_number_propagation" invisible="0" />
+        <field name="display_lot_number_propagation" invisible="1" />
         <field
                     name="lot_number_propagation"
                     attrs="{'invisible': [('display_lot_number_propagation', '=', False)]}"

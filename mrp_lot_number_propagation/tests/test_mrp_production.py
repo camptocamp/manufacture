@@ -55,15 +55,17 @@ class TestMrpProduction(Common):
         order.qty_producing = order.product_qty
 
     def test_order_propagated_lot_producing(self):
-        self.assertTrue(self.order.is_lot_number_propagated)
+        self.assertTrue(self.order.is_lot_number_propagated)  # set by onchange
         self._update_stock_component_qty(self.order)
         self.order.action_confirm()
+        self.assertTrue(self.order.is_lot_number_propagated)  # set by action_confirm
+        self.assertTrue(any(self.order.move_raw_ids.mapped("propagate_lot_number")))
         self._set_qty_done(self.order)
         self.assertEqual(self.order.propagated_lot_producing, self.LOT_NAME)
 
     def test_order_write_lot_producing_id_not_allowed(self):
         with self.assertRaisesRegex(UserError, "not allowed"):
-            self.order.lot_producing_id = False
+            self.order.write({"lot_producing_id": False})
 
     def test_order_post_inventory(self):
         self._update_stock_component_qty(self.order)

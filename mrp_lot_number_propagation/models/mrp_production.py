@@ -1,15 +1,24 @@
 # Copyright 2022 Camptocamp SA
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl)
 
+from lxml import etree
+
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
+from odoo.osv import expression
+from odoo.tools.safe_eval import safe_eval
+
+from odoo.addons.base.models.ir_ui_view import (
+    transfer_modifiers_to_node,
+    transfer_node_to_modifiers,
+)
 
 
 class MrpProduction(models.Model):
     _inherit = "mrp.production"
 
     is_lot_number_propagated = fields.Boolean(
-        related="bom_id.lot_number_propagation",
+        default=False,
         readonly=True,
         help=(
             "Lot/serial number is propagated "
@@ -26,7 +35,7 @@ class MrpProduction(models.Model):
     )
 
     @api.depends(
-        "move_raw_ids.bom_line_id.propagate_lot_number",
+        "move_raw_ids.propagate_lot_number",
         "move_raw_ids.move_line_ids.qty_done",
         "move_raw_ids.move_line_ids.lot_id",
     )
@@ -41,6 +50,22 @@ class MrpProduction(models.Model):
                 line = move_lines
                 if line.qty_done == 1 and line.lot_id:
                     order.propagated_lot_producing = line.lot_id.name
+
+    @api.onchange("bom_id")
+    def _onchange_bom_id_lot_number_propagation(self):
+        self.is_lot_number_propagated = self.bom_id.lot_number_propagation
+
+    def action_confirm(self):
+        res = super().action_confirm()
+        self._set_lot_number_propagation_data_from_bom()
+        return res
+
+    def _set_lot_number_propagation_data_from_bom(self):
+        """Copy information from BoM to the manufacturing order."""
+        for order in self:
+            order.is_lot_number_propagated = order.bom_id.lot_number_propagation
+            for move in order.move_raw_ids:
+                move.propagate_lot_number = move.bom_line_id.propagate_lot_number
 
     def _post_inventory(self, cancel_backorder=False):
         self._create_and_assign_propagated_lot_number()
@@ -79,3 +104,39 @@ class MrpProduction(models.Model):
                     )
                 )
         return super().write(vals)
+
+    def fields_view_get(
+        self, view_id=None, view_type="form", toolbar=False, submenu=False
+    ):
+        # Override to hide the "lot_producing_id" field + "action_generate_serial"
+        # button if the MO is configured to propagate a serial number
+        result = super().fields_view_get(
+            view_id=view_id, view_type=view_type, toolbar=toolbar, submenu=submenu
+        )
+        if result.get("name") == "mrp.production.form":
+            result["arch"] = self._fields_view_get_adapt_lot_tags_attrs(result["arch"])
+        return result
+
+    def _fields_view_get_adapt_lot_tags_attrs(self, view_arch):
+        """Hide elements related to lot if it is automatically propagated."""
+        doc = etree.XML(view_arch)
+        tags = (
+            "//label[@for='lot_producing_id']",
+            "//field[@name='lot_producing_id']/..",  # parent <div>
+        )
+        for xpath_expr in tags:
+            attrs_key = "invisible"
+            nodes = doc.xpath(xpath_expr)
+            for field in nodes:
+                attrs = safe_eval(field.attrib.get("attrs", "{}"))
+                if not attrs[attrs_key]:
+                    continue
+                invisible_domain = expression.OR(
+                    [attrs[attrs_key], [("is_lot_number_propagated", "=", True)]]
+                )
+                attrs[attrs_key] = invisible_domain
+                field.set("attrs", str(attrs))
+                modifiers = {}
+                transfer_node_to_modifiers(field, modifiers, self.env.context)
+                transfer_modifiers_to_node(modifiers, field)
+        return etree.tostring(doc, encoding="unicode")
