@@ -43,7 +43,7 @@ class MrpProduction(models.Model):
         for order in self:
             order.propagated_lot_producing = False
             move_with_lot = order.move_raw_ids.filtered(
-                lambda o: o.bom_line_id.propagate_lot_number
+                lambda o: o.propagate_lot_number
             )
             move_lines = move_with_lot.move_line_ids
             if len(move_lines) == 1:
