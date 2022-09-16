@@ -3,7 +3,7 @@
 
 from lxml import etree
 
-from odoo import _, api, fields, models
+from odoo import _, api, fields, models, tools
 from odoo.exceptions import UserError
 from odoo.osv import expression
 from odoo.tools.safe_eval import safe_eval
@@ -45,11 +45,18 @@ class MrpProduction(models.Model):
             move_with_lot = order.move_raw_ids.filtered(
                 lambda o: o.propagate_lot_number
             )
-            move_lines = move_with_lot.move_line_ids
-            if len(move_lines) == 1:
-                line = move_lines
-                if line.qty_done == 1 and line.lot_id:
-                    order.propagated_lot_producing = line.lot_id.name
+            line_with_sn = move_with_lot.move_line_ids.filtered(
+                lambda l: (
+                    l.lot_id
+                    and l.product_id.tracking == "serial"
+                    and tools.float_compare(
+                        l.qty_done, 1, precision_rounding=l.product_uom_id.rounding
+                    )
+                    == 0
+                )
+            )
+            if len(line_with_sn) == 1:
+                order.propagated_lot_producing = line_with_sn.lot_id.name
 
     @api.onchange("bom_id")
     def _onchange_bom_id_lot_number_propagation(self):
@@ -80,15 +87,14 @@ class MrpProduction(models.Model):
                 and m.state not in ("done", "cancel")
             )
             if finish_moves and not finish_moves.quantity_done:
-                order.with_context(lot_propagation=True).lot_producing_id = self.env[
-                    "stock.production.lot"
-                ].create(
+                lot = self.env["stock.production.lot"].create(
                     {
                         "product_id": order.product_id.id,
                         "company_id": order.company_id.id,
                         "name": order.propagated_lot_producing,
                     }
                 )
+                order.with_context(lot_propagation=True).lot_producing_id = lot
 
     def write(self, vals):
         for order in self:
