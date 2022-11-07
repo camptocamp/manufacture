@@ -26,12 +26,14 @@ class StockMoveLine(models.Model):
     def _compute_is_lot_id_editable(self):
         for line in self:
             line.is_lot_id_editable = True
-            mo = line.move_id.move_orig_ids.production_id
-            if (
+            mos = line.move_id.move_orig_ids.production_id
+            lot_prapagated = [
                 mo.propagated_lot_producing == line.lot_id.name
                 and mo.subcontracting_has_been_recorded
                 and mo.is_lot_number_propagated
-            ):
+                for mo in mos
+            ]
+            if any(lot_prapagated):
                 line.is_lot_id_editable = False
 
     def fields_view_get(
