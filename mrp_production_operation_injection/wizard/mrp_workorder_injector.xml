@@ -10,7 +10,6 @@
                     <field name="bom_id" invisible="1" />
                     <field name="allowed_bom_operation_ids" invisible="1" />
                     <field name="production_workorder_ids" invisible="1" />
-                    <!-- TODO: Add domains -->
                     <field
                         name="operation_id"
                         domain="[('id', 'in', allowed_bom_operation_ids)]"

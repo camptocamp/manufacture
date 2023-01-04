@@ -129,8 +129,8 @@ class TestMrpProductionInjectOperation(TransactionCase):
     def _record_time_tracking(cls, workorder, duration, productivity):
         workorder_form = Form(workorder)
         with workorder_form.time_ids.new() as time_tracking_form:
-            time_tracking_form.date_end = time_tracking_form.date_start + relativedelta(
-                seconds=duration
+            time_tracking_form.date_end = fields.Datetime.add(
+                time_tracking_form.date_start, seconds=duration
             )
             time_tracking_form.loss_id = productivity
 
