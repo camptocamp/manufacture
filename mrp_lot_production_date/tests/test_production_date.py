@@ -5,13 +5,11 @@ from odoo.tests.common import Form, SavepointCase
 
 
 class TestMrpLotProductionDate(SavepointCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
         cls.env = cls.env(context=dict(cls.env.context, tracking_disable=True))
         cls.bom = cls.env.ref("mrp.mrp_bom_table_top")  # Tracked by S/N
-        cls.bom.product_id.use_production_date = True
 
     @classmethod
     def _create_manufacturing_order(cls, bom, product_qty=1):
@@ -22,7 +20,16 @@ class TestMrpLotProductionDate(SavepointCase):
             order.invalidate_cache()
             return order
 
+    @classmethod
+    def _validate_manufacturing_order(cls, order):
+        order.action_confirm()
+        order.action_assign()
+        # To ease the test we generate the lot manually, but this could be
+        # handled automatically by calling the 'Immediate production' wizard
+        order.action_generate_serial()
+        order.button_mark_done()
+
     def test_lot_production_date(self):
         order = self._create_manufacturing_order(self.bom)
-        order.action_generate_serial()
+        self._validate_manufacturing_order(order)
         self.assertTrue(order.lot_producing_id.production_date)

@@ -7,8 +7,9 @@ from odoo import fields, models
 class MrpProduction(models.Model):
     _inherit = "mrp.production"
 
-    def action_generate_serial(self):
-        res = super().action_generate_serial()
-        if self.lot_producing_id.product_id.use_production_date:
-            self.lot_producing_id.production_date = fields.Datetime.now()
+    def _post_inventory(self, cancel_backorder=False):
+        res = super()._post_inventory(cancel_backorder=cancel_backorder)
+        for order in self:
+            if order.lot_producing_id:
+                order.lot_producing_id.production_date = fields.Datetime.now()
         return res
