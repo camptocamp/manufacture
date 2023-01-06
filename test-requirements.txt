@@ -1,0 +1,1 @@
+odoo14-addon-stock_lot_production_date @ git+https://github.com/OCA/stock-logistics-workflow.git/refs/pull/1162/head#subdirectory=setup/stock_lot_production_date
