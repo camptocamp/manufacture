@@ -28,5 +28,12 @@ class StockPicking(models.Model):
                 # at least 1 finished product even if there is enough components,
                 # but Odoo expects to work this way.
                 if order.auto_validate and order.reservation_state == "assigned":
+                    # 'stock.immediate.transfer' could set the 'skip_immediate'
+                    # key to process the transfer. The same ctx key is used by
+                    # MO validation methods, but they are not the same!
+                    # Unset the key in such case.
+                    # TODO add a test
+                    if order.env.context.get("skip_immediate"):
+                        order = order.with_context(skip_immediate=False)
                     order._auto_validate_after_picking()
         return res
