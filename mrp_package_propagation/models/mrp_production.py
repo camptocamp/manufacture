@@ -1,7 +1,8 @@
 # Copyright 2023 Camptocamp SA
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl)
 
-from odoo import api, fields, models
+from odoo import _, api, fields, models, tools
+from odoo.exceptions import UserError
 
 
 class MrpProduction(models.Model):
@@ -46,8 +47,33 @@ class MrpProduction(models.Model):
 
     def action_confirm(self):
         res = super().action_confirm()
+        self._check_package_propagation()
         self._set_package_propagation_data_from_bom()
         return res
+
+    def _check_package_propagation(self):
+        """Ensure we can propagate the component package from the BoM."""
+        for order in self:
+            bom = order.bom_id
+            if not bom.package_propagation:
+                continue
+            qty_ok = (
+                tools.float_compare(
+                    order.product_qty,
+                    bom.product_qty,
+                    precision_rounding=bom.product_uom_id.rounding,
+                )
+                == 0
+            )
+            if not qty_ok or order.product_uom_id != bom.product_uom_id:
+                raise UserError(
+                    _(
+                        "The BoM is propagating a package from one component.\n"
+                        "As such, the manufacturing order is forced to produce "
+                        "the same quantity than the BoM: %s %s"
+                    )
+                    % (bom.product_qty, bom.product_uom_id.display_name)
+                )
 
     def _set_package_propagation_data_from_bom(self):
         """Copy information from BoM to the manufacturing order."""

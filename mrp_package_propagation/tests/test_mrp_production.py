@@ -1,6 +1,7 @@
 # Copyright 2023 Camptocamp SA
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl)
 
+from odoo.exceptions import UserError
 from odoo.tests.common import Form
 
 from .common import Common
@@ -25,6 +26,22 @@ class TestMrpProduction(Common):
         for line in order.move_raw_ids.move_line_ids:
             line.qty_done = line.product_uom_qty
         order.qty_producing = order.product_qty
+
+    def test_order_check_package_propagation(self):
+        self.assertTrue(self.order.is_package_propagated)
+        # Set a wrong quantity to produce
+        self.order.product_qty = 2
+        with self.assertRaisesRegex(UserError, "The BoM is propagating a package"):
+            self.order.action_confirm()
+        self.order.product_qty = self.order.bom_id.product_qty
+        # Set a wrong UoM
+        self.order.product_uom_id = self.env.ref("uom.product_uom_dozen")
+        with self.assertRaisesRegex(UserError, "The BoM is propagating a package"):
+            self.order.action_confirm()
+        # Restore expected values to get the order validated
+        self.order.product_uom_id = self.order.bom_id.product_uom_id
+        self.order.product_qty = self.order.bom_id.product_qty
+        self.order.action_confirm()
 
     def test_order_propagated_package_id(self):
         self.assertTrue(self.order.is_package_propagated)  # set by onchange

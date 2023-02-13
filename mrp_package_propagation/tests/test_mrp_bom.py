@@ -19,7 +19,29 @@ class TestMrpBom(Common):
             line_form = form.bom_line_ids.edit(i)
             line_form.propagate_package = True
             line_form.save()
-        with self.assertRaisesRegex(ValidationError, "Only one BoM"):
+        with self.assertRaisesRegex(ValidationError, "Only one component"):
+            form.save()
+
+    def test_bom_line_wrong_unit(self):
+        form = Form(self.bom)
+        form.package_propagation = True
+        # Set the wrong UoM on the line
+        line_form = form.bom_line_ids.edit(1)
+        line_form.propagate_package = True
+        line_form.product_uom_id = self.env.ref("uom.product_uom_dozen")
+        line_form.save()
+        with self.assertRaisesRegex(ValidationError, "The component propagating"):
+            form.save()
+
+    def test_bom_line_wrong_qty(self):
+        form = Form(self.bom)
+        form.package_propagation = True
+        # Set the wrong qty on the line
+        line_form = form.bom_line_ids.edit(1)
+        line_form.propagate_package = True
+        line_form.product_qty = 2
+        line_form.save()
+        with self.assertRaisesRegex(ValidationError, "The component propagating"):
             form.save()
 
     def test_bom_check_propagate_package(self):
