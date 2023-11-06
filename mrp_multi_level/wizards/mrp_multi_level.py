@@ -644,6 +644,30 @@ class MultiLevelMrp(models.TransientModel):
                         for move in product_mrp_area.mrp_move_ids:
                             if self._exclude_move(move):
                                 continue
+                            # if we are in the future, and the forecast qty is
+                            # going to be below the minimum, then we must
+                            # resupply today to rebuild the safety stock.
+                            #
+                            # This is only done if the area has the
+                            # priorize_safety_stock flag set
+                            if (
+                                onhand < product_mrp_area.mrp_minimum_stock
+                                and nbr_create == 0
+                                and move.mrp_date > date.today()
+                                and product_mrp_area.mrp_area_id.priorize_safety_stock
+                            ):
+                                nbr_create += 1
+                                qtytoorder = product_mrp_area.mrp_minimum_stock - onhand
+                                name = _("Safety Stock")
+                                cm = self.create_action(
+                                    product_mrp_area_id=product_mrp_area,
+                                    mrp_date=date.today(),
+                                    mrp_qty=qtytoorder,
+                                    name=name,
+                                    values=dict(origin=name),
+                                )
+                                qty_ordered = cm["qty_ordered"]
+                                onhand += qty_ordered
                             qtytoorder = (
                                 product_mrp_area.mrp_minimum_stock
                                 - onhand
