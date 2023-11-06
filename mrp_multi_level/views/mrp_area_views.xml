@@ -44,6 +44,7 @@
                         </group>
                         <group name="settings">
                             <field name="calendar_id" />
+                            <field name="priorize_safety_stock" />
                         </group>
                     </group>
                 </sheet>
