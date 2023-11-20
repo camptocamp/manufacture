@@ -27,6 +27,9 @@ class MrpArea(models.Model):
         string="Working Hours",
         related="warehouse_id.calendar_id",
     )
+    priorize_safety_stock = fields.Boolean(
+        help="Rebuild safety stock as early as possible"
+    )
 
     @api.model
     def _datetime_to_date_tz(self, dt_to_convert=None):
