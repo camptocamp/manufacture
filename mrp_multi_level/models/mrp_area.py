@@ -30,6 +30,11 @@ class MrpArea(models.Model):
     priorize_safety_stock = fields.Boolean(
         help="Rebuild safety stock as early as possible"
     )
+    safety_stock_target_date = fields.Date(
+        string="Safety stock lead date",
+        help="We will start rebuilding safety stock on that date",
+        default=fields.Date.today,
+    )
 
     @api.model
     def _datetime_to_date_tz(self, dt_to_convert=None):
