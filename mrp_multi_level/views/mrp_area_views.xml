@@ -45,6 +45,18 @@
                         <group name="settings">
                             <field name="calendar_id" />
                             <field name="priorize_safety_stock" />
+                            <field
+                                name="safety_stock_lead"
+                                attrs="{'invisible': [('priorize_safety_stock', '=', False)]}"
+                            />
+                            <field
+                                name="safety_stock_lead_week_day"
+                                attrs="{'invisible': [('priorize_safety_stock', '=', False)]}"
+                            />
+                            <field
+                                name="safety_stock_target_date"
+                                attrs="{'invisible': [('priorize_safety_stock', '=', False)]}"
+                            />
                         </group>
                     </group>
                 </sheet>
