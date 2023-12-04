@@ -259,7 +259,7 @@ class ProductMRPArea(models.Model):
 
     def _in_stock_moves_domain(self):
         self.ensure_one()
-        locations = self.mrp_area_id._get_locations()
+        locations = self._get_locations()
         return [
             ("product_id", "=", self.product_id.id),
             ("state", "not in", ["done", "cancel"]),
@@ -270,7 +270,7 @@ class ProductMRPArea(models.Model):
 
     def _out_stock_moves_domain(self):
         self.ensure_one()
-        locations = self.mrp_area_id._get_locations()
+        locations = self._get_locations()
         return [
             ("product_id", "=", self.product_id.id),
             ("state", "not in", ["done", "cancel"]),
@@ -295,3 +295,7 @@ class ProductMRPArea(models.Model):
     def _to_be_exploded(self):
         self.ensure_one()
         return self.supply_method in ["manufacture", "phantom"]
+
+    def _get_locations(self):
+        self.ensure_one()
+        return self.mrp_area_id._get_locations()
