@@ -451,7 +451,7 @@ class TestMrpMultiLevel(TestMrpMultiLevelCommon):
         self.cases_area.priorize_safety_stock = True
         self.cases_area.safety_stock_target_date = now.date() + timedelta(days=5)
         product = self.prod_test  # has Buy route
-        product.seller_ids[0].delay = 5  # set a purchase lead time
+        product.seller_ids[0].delay = 2  # set a purchase lead time
         self.quant_obj._update_available_quantity(product, self.cases_loc, 5)
         self.product_mrp_area_obj.create(
             {
@@ -460,6 +460,9 @@ class TestMrpMultiLevel(TestMrpMultiLevelCommon):
                 "mrp_minimum_stock": 15,
                 "mrp_applicable": True,  # needed?
             }
+        )
+        self._create_picking_out(
+            product, 6.0, now + timedelta(days=3), location=self.cases_loc
         )
         self._create_picking_in(
             product, 10.0, now + timedelta(days=7), location=self.cases_loc
@@ -476,33 +479,45 @@ class TestMrpMultiLevel(TestMrpMultiLevelCommon):
                 ("product_id", "=", product.id),
             ]
         )
+
         expected = [
             {
-                "date": now.date() + timedelta(days=5),  # shifted in the future
-                "demand_qty": 0.0,
+                # only procure to get back to 0 while in the stress period
+                "date": now.date() + timedelta(days=3),
+                "demand_qty": 6.0,
+                "final_on_hand_qty": -1.0,
                 "initial_on_hand_qty": 5.0,
-                "final_on_hand_qty": 5.0,
-                "to_procure": 10.0,  # safety stock - current stock
+                "running_availability": 0.0,
                 "supply_qty": 0.0,
-                "running_availability": 15.0,
+                "to_procure": 1.0,
             },
             {
-                "date": now.date() + timedelta(days=7),
+                # after stress period, rebuild safety stock
+                "date": datetime.date(2023, 12, 18),
                 "demand_qty": 0.0,
-                "initial_on_hand_qty": 5.0,
-                "final_on_hand_qty": 15.0,
-                "to_procure": 0.0,
-                "supply_qty": 10.0,
+                "final_on_hand_qty": -1.0,
+                "initial_on_hand_qty": -1.0,
+                "running_availability": 15.0,
+                "supply_qty": 0.0,
+                "to_procure": 15.0,
+            },
+            {
+                "date": datetime.date(2023, 12, 20),
+                "demand_qty": 0.0,
+                "final_on_hand_qty": 9.0,
+                "initial_on_hand_qty": -1.0,
                 "running_availability": 25.0,
+                "supply_qty": 10.0,
+                "to_procure": 0.0,
             },
             {
-                "date": now.date() + timedelta(days=14),
+                "date": datetime.date(2023, 12, 27),
                 "demand_qty": 12.0,
-                "initial_on_hand_qty": 15.0,
-                "final_on_hand_qty": 3.0,
-                "to_procure": 2.0,
-                "supply_qty": 0.0,
+                "final_on_hand_qty": -3.0,
+                "initial_on_hand_qty": 9.0,
                 "running_availability": 15.0,
+                "supply_qty": 0.0,
+                "to_procure": 2.0,
             },
         ]
         self.assertEqual(len(expected), len(inventory))
