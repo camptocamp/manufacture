@@ -493,7 +493,7 @@ class TestMrpMultiLevel(TestMrpMultiLevelCommon):
             },
             {
                 # after stress period, rebuild safety stock
-                "date": datetime.date(2023, 12, 18),
+                "date": now.date() + timedelta(days=5),
                 "demand_qty": 0.0,
                 "final_on_hand_qty": -1.0,
                 "initial_on_hand_qty": -1.0,
@@ -502,7 +502,7 @@ class TestMrpMultiLevel(TestMrpMultiLevelCommon):
                 "to_procure": 15.0,
             },
             {
-                "date": datetime.date(2023, 12, 20),
+                "date": now.date() + timedelta(days=7),
                 "demand_qty": 0.0,
                 "final_on_hand_qty": 9.0,
                 "initial_on_hand_qty": -1.0,
@@ -511,7 +511,7 @@ class TestMrpMultiLevel(TestMrpMultiLevelCommon):
                 "to_procure": 0.0,
             },
             {
-                "date": datetime.date(2023, 12, 27),
+                "date": now.date() + timedelta(days=14),
                 "demand_qty": 12.0,
                 "final_on_hand_qty": -3.0,
                 "initial_on_hand_qty": 9.0,
