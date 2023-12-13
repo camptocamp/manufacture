@@ -447,7 +447,9 @@ class TestMrpMultiLevel(TestMrpMultiLevelCommon):
         self.assertEqual(product_mrp_area.supply_method, "buy")
 
     def test_18_priorize_safety_stock(self):
+        now = datetime.now()
         self.cases_area.priorize_safety_stock = True
+        self.cases_area.safety_stock_target_date = now.date() + timedelta(days=5)
         product = self.prod_test  # has Buy route
         product.seller_ids[0].delay = 5  # set a purchase lead time
         self.quant_obj._update_available_quantity(product, self.cases_loc, 5)
@@ -459,7 +461,6 @@ class TestMrpMultiLevel(TestMrpMultiLevelCommon):
                 "mrp_applicable": True,  # needed?
             }
         )
-        now = datetime.now()
         self._create_picking_in(
             product, 10.0, now + timedelta(days=7), location=self.cases_loc
         )
@@ -477,7 +478,7 @@ class TestMrpMultiLevel(TestMrpMultiLevelCommon):
         )
         expected = [
             {
-                "date": now.date(),
+                "date": now.date() + timedelta(days=5),  # shifted in the future
                 "demand_qty": 0.0,
                 "initial_on_hand_qty": 5.0,
                 "final_on_hand_qty": 5.0,
