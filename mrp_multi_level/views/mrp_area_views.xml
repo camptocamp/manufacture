@@ -44,6 +44,11 @@
                         </group>
                         <group name="settings">
                             <field name="calendar_id" />
+                            <field name="priorize_safety_stock" />
+                            <field
+                                name="safety_stock_target_date"
+                                attrs="{'invisible': [('priorize_safety_stock', '=', False)], 'required': [('priorize_safety_stock', '=', True)]}"
+                            />
                         </group>
                     </group>
                 </sheet>

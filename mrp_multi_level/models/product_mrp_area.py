@@ -3,8 +3,9 @@
 # - Jordi Ballester Alomar <jordi.ballester@forgeflow.com>
 # - Lois Rilo Antelo <lois.rilo@forgeflow.com>
 # License LGPL-3.0 or later (https://www.gnu.org/licenses/lgpl.html).
-
 from math import ceil
+
+from dateutil.relativedelta import relativedelta
 
 from odoo import _, api, fields, models
 from odoo.exceptions import ValidationError
@@ -60,6 +61,11 @@ class ProductMRPArea(models.Model):
         "to be valid for the MRP.",
     )
     mrp_lead_time = fields.Float(string="Lead Time", compute="_compute_mrp_lead_time")
+    safety_stock_target_date = fields.Date(
+        string="Safety stock lead date",
+        compute="_compute_safety_stock_target_date",
+        help="The date when we can restart supplying for this product",
+    )
     distribution_lead_time = fields.Float()
     main_supplier_id = fields.Many2one(
         comodel_name="res.partner",
@@ -172,6 +178,22 @@ class ProductMRPArea(models.Model):
             rec.mrp_lead_time = rec.distribution_lead_time
         for rec in self - produced - purchased - distributed:
             rec.mrp_lead_time = 0
+
+    @api.depends(
+        "mrp_lead_time",
+        "mrp_area_id.safety_stock_target_date",
+        "mrp_area_id.priorize_safety_stock",
+    )
+    def _compute_safety_stock_target_date(self):
+        today = fields.Date.context_today(self)
+        for rec in self:
+            if rec.mrp_area_id.priorize_safety_stock:
+                delta = relativedelta(days=rec.mrp_lead_time)
+                rec.safety_stock_target_date = max(
+                    today, rec.mrp_area_id.safety_stock_target_date + delta
+                )
+            else:
+                rec.safety_stock_target_date = today
 
     def _compute_qty_available(self):
         for rec in self:
