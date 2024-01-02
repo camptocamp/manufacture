@@ -539,11 +539,11 @@ class MultiLevelMrp(models.TransientModel):
         logger.info("End MRP initialisation")
 
     def _get_qty_to_order(self, product_mrp_area, date, move_qty, onhand):
-        """compute the qty to order at a given date, for a product MRP area, given an
+        """Compute the qty to order at a given date, for a product MRP area, given an
         mrp.move quantity and an onhand quantity.
 
-        The method takes into account the safety stock priorization and safety
-        stock target date.
+        This method is an extension point, allowing a new module to change the way this
+        quantity should be computed.
         """
         # The default rule is to resupply to rebuild the safety stock
         return product_mrp_area.mrp_minimum_stock - onhand - move_qty
@@ -649,9 +649,9 @@ class MultiLevelMrp(models.TransientModel):
         return nbr_create
 
     def _get_safety_stock_target_date(self, product_mrp_area):
-        """get the date at which the safety stock rebuild should be targeted
+        """Get the date at which the safety stock rebuild should be targeted
 
-        this method is meant as an extension point for modules who need to change that date."""
+        This method is an extension point for modules who need to cusomize that date."""
         return date.today()
 
     @api.model
