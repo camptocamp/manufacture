@@ -2,7 +2,6 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl)
 
 from odoo.exceptions import UserError
-from odoo.fields import Command
 from odoo.tests.common import Form
 
 from .common import Common
@@ -41,6 +40,7 @@ class TestMrpProduction(Common):
         self.assertTrue(self.order.is_lot_number_propagated)  # set by onchange
         self._update_stock_component_qty(self.order)
         self.order.action_confirm()
+        self.order.action_assign()
         self.assertTrue(self.order.is_lot_number_propagated)  # set by action_confirm
         self.assertTrue(any(self.order.move_raw_ids.mapped("propagate_lot_number")))
         self._set_qty_done(self.order)
@@ -53,13 +53,16 @@ class TestMrpProduction(Common):
     def test_order_post_inventory(self):
         self._update_stock_component_qty(self.order)
         self.order.action_confirm()
+        self.order.action_assign()
         self._set_qty_done(self.order)
+        self.assertTrue(self.order.is_lot_number_propagated)  # set by action_confirm
         self.order.button_mark_done()
         self.assertEqual(self.order.lot_producing_id.name, self.LOT_NAME)
 
     def test_order_post_inventory_lot_already_exists_but_not_used(self):
         self._update_stock_component_qty(self.order)
         self.order.action_confirm()
+        self.order.action_assign()
         self._set_qty_done(self.order)
         self.assertEqual(self.order.propagated_lot_producing, self.LOT_NAME)
         # Create a lot with the same number for the finished product
@@ -77,6 +80,7 @@ class TestMrpProduction(Common):
     def test_order_post_inventory_lot_already_exists_and_used(self):
         self._update_stock_component_qty(self.order)
         self.order.action_confirm()
+        self.order.action_assign()
         self._set_qty_done(self.order)
         self.assertEqual(self.order.propagated_lot_producing, self.LOT_NAME)
         # Create a lot with the same number for the finished product
@@ -116,9 +120,7 @@ class TestMrpProduction(Common):
         # Remove application on variant for first bom line
         #  with this only the first variant of the product template
         #  will have a single component where lot must be propagated
-        new_bom.bom_line_ids[0].bom_product_template_attribute_value_ids = [
-            Command.clear()
-        ]
+        new_bom.bom_line_ids[0].bom_product_template_attribute_value_ids = [(5, 0, 0)]
         for cnt, product in enumerate(self.bom_product_template.product_variant_ids):
             new_order = self._create_order(product, new_bom)
             if cnt == 0:
@@ -131,14 +133,15 @@ class TestMrpProduction(Common):
         self._add_color_and_legs_variants(self.bom_product_template)
         self._add_color_and_legs_variants(self.product_template_tracked_by_sn)
         new_bom = self._create_bom_with_variants()
-        # Remove first bom line
-        #  with this the first variant of the product template
-        #  will not have any component where lot must be propagated
-        new_bom.bom_line_ids[0].unlink()
         for cnt, product in enumerate(self.bom_product_template.product_variant_ids):
             new_order = self._create_order(product, new_bom)
             if cnt == 0:
+                # Fake the case with no component by removing the flag
+                new_order.move_raw_ids.bom_line_id.write(
+                    {"propagate_lot_number": False}
+                )
                 with self.assertRaisesRegex(UserError, "no component"):
                     new_order.action_confirm()
+                    new_order.action_assign()
             else:
                 new_order.action_confirm()
