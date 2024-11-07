@@ -152,6 +152,13 @@ class MrpProduction(models.Model):
                 )
         return super().write(vals)
 
+    def action_generate_serial(self):
+        if self.is_lot_number_propagated:
+            if self.product_id.tracking == "serial":
+                self._set_qty_producing()
+            return
+        return super().action_generate_serial()
+
     def fields_view_get(
         self, view_id=None, view_type="form", toolbar=False, submenu=False
     ):

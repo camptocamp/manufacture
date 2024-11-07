@@ -8,7 +8,7 @@ from odoo import fields
 from odoo.tests import Form, common
 
 
-class Common(common.TransactionCase):
+class Common(common.SavepointCase):
 
     LOT_NAME = "PROPAGATED-LOT"
 
@@ -121,9 +121,7 @@ class Common(common.TransactionCase):
                 {
                     "product_tmpl_id": product_template.id,
                     "attribute_id": attribute.id,
-                    "value_ids": [
-                        fields.Command.set([att_val.id for att_val in att_values_list])
-                    ],
+                    "value_ids": [(6, 0, [att_val.id for att_val in att_values_list])],
                 }
             )
 
@@ -145,7 +143,7 @@ class Common(common.TransactionCase):
             att_values_commands = []
             for att_value in product.product_template_attribute_value_ids:
                 att_values_commands.append(
-                    fields.Command.link(attribute_values_dict[att_value.name])
+                    (4, attribute_values_dict[att_value.name], 0)
                 )
             create_values[
                 "bom_product_template_attribute_value_ids"
