@@ -81,7 +81,7 @@ class TestStockMoveBomLinePropagate(SavepointCase):
                         "route_ids": cls.env["stock.location.route"].browse(),
                         "warehouse_id": cls.warehouse or False,
                         "partner_id": cls.partner.id,
-                        "product_description_variants": product.name,
+                        "product_description_variants": "",
                         "company_id": cls.warehouse.company_id,
                     },
                 )
@@ -96,7 +96,11 @@ class TestStockMoveBomLinePropagate(SavepointCase):
             [("picking_type_code", "=", "outgoing")], order="id desc", limit=1
         )
         self.assertEqual(len(delivery_order.move_lines), 4)
+        # Since the flag is set on "WH: Output → Customers", the moves generated
+        #  from Packing zone to Output are not grouped
         pack_order = delivery_order.move_lines.move_orig_ids.picking_id
         self.assertEqual(len(pack_order.move_lines), 4)
+        # Since the flag is not set on "WH: Packing zone → Output", the moves generated
+        #  from Stock to Packing zone are grouped
         pick_order = pack_order.move_lines.move_orig_ids.picking_id
-        self.assertEqual(len(pick_order.move_lines), 4)
+        self.assertEqual(len(pick_order.move_lines), 3)
