@@ -25,12 +25,14 @@ class MrpWorkorder(models.Model):
         return super().unlink()
 
     def button_start(self, raise_on_invalid_state=False, **kwargs):
-        # Odoo EE `mrp_workorder` adds a new arg `bypass=False`, 
+        # Odoo EE `mrp_workorder` adds a new arg `bypass=False`,
         # leading to following error :
         # TypeError: MrpWorkorder.button_start() got an unexpected keyword
         #            argument 'bypass'.
         # Adding **kwargs to handle this unexpected new argument on EE.
-        res = super().button_start(raise_on_invalid_state=raise_on_invalid_state, **kwargs)
+        res = super().button_start(
+            raise_on_invalid_state=raise_on_invalid_state, **kwargs
+        )
         if self.operation_id and self.operation_id.blocking_stage is True:
             # calculate the end of the blocking stage based on :
             # the recommended_blocking_time from operation_id
